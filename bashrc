@@ -16,9 +16,9 @@
 
 function profile() { 
   if [ "$1" = "edit" ]; then
-    command cd $HOME/Dotfiles && command mvim -p .;
+    command cd $HOME/Dotfiles && command subl -p .;
   elif [ "$1" = "vim" ]; then
-    command mvim -p $HOME/Dotfiles/vimrc \
+    command subl -p $HOME/Dotfiles/vimrc \
       $HOME/Dotfiles/vim/colors/sea_dark.vim
   elif [ "$1" = "load" ]; then
     command source $HOME/.bashrc;
@@ -65,36 +65,35 @@ umask 0022
 # PATH
 # ----------------------------------------------------------------------
 
-# we want the various sbins on the path along with /usr/local/bin
-PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
-PATH="/usr/local/bin:$PATH"
-
-# put ~/dotfiles/bin on PATH if you have it
-test -d "$HOME/dotfiles/bin" &&
-PATH="$HOME/dotfiles/bin:$PATH"
-
-# put ~/bin on PATH if you have it
-test -d "$HOME/bin" &&
-PATH="$HOME/bin:$PATH"
-
-# put ~/.rbenv on PATH if you have it
-test -d "$HOME/.rbenv" &&
-PATH="$HOME/.rbenv/bin:$PATH" &&
+export PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:$HOME/bin:$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
 
-# put ~/.gem on PATH if you have it
-test -d "$HOME/.gem" &&
-PATH="$HOME/.gem/ruby/1.8/bin:$PATH"
+# put ~/.rbenv on PATH if you have it
+# test -d "$HOME/.rbenv" &&
+# PATH="$HOME/.rbenv/bin:$PATH" &&
+# eval "$(rbenv init -)"
+
+# we want the various sbins on the path along with /usr/local/bin
+#PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin"
+#PATH="/usr/local/bin:$PATH"
+# 
+## put ~/dotfiles/bin on PATH if you have it
+#test -d "$HOME/dotfiles/bin" &&
+#PATH="$HOME/dotfiles/bin:$PATH"
+# 
+## put ~/bin on PATH if you have it
+#test -d "$HOME/bin" &&
+#PATH="$HOME/bin:$PATH"
 
 # ----------------------------------------------------------------------
 # EDITOR
 # ----------------------------------------------------------------------
 
-export EDITOR="mvim"
+export EDITOR="subl"
 
 # vim edit shortcut
 function e() { 
-  command mvim -p "$@" >/dev/null;
+  command subl -p "$@" >/dev/null;
 }
 alias e.="e ."
 alias vi="mvim -p"
@@ -242,21 +241,11 @@ bind '"\t":menu-complete'
 # always pass these options to ls(1)
 LS_COMMON="-hB"
 
-# setup the main ls alias if we've established common args
-test -n "$LS_COMMON" &&
-alias ls='ls $LS_OPTIONS $LS_COMMON'
-
 # list all files in directory
 alias ll="ls -lGa"
 
 # list dot files in directory
 alias l.="ls -d .*"
-
-# if the dircolors utility is available, set that up too
-if [ "$TERM" != "dumb" ]; then
-    export LS_OPTIONS='--color=always'
-    eval `dircolors ~/.dircolors`
-fi
 
 alias lg="git ls -hG"
 
@@ -361,6 +350,17 @@ function ss(){
     done
   fi
 }
+# bundle execscript/server
+function bess(){
+  title_git " /  Server"
+  if [ "$1" != "" ]; then
+    command cl && bundle exec script/server -p "$1";
+  else
+    for port in `seq 3000 3004`; do
+      if bundle exec script/server -p $port; then break; fi
+    done
+  fi
+}
 # rails server
 function rs(){
   title_git " /  Server"
@@ -369,6 +369,17 @@ function rs(){
   else
     for port in `seq 3000 3004`; do
       if rails server -p $port; then break; fi
+    done
+  fi
+}
+# bundle exec rails server
+function bers(){
+  title_git " /  Server"
+  if [ "$1" != "" ]; then
+    command cl && bundle execrails server -p "$1";
+  else
+    for port in `seq 3000 3004`; do
+      if bundle exec rails server -p $port; then break; fi
     done
   fi
 }
@@ -391,13 +402,6 @@ alias pgs="pg_ctl -D `brew --prefix`/var/postgres -l `brew --prefix`/var/postgre
 # mongo
 alias ms="title 'MongoDB Server' && `brew --prefix`/bin/mongod --dbpath=$HOME/Sites/_mongodata/"
 
-# ----------------------------------------------------------------------
-# RUBY
-# ----------------------------------------------------------------------
-
-# rake tasks
-alias rdm="rake db:migrate"
-alias rdfl="rake db:fixtures:load"
 
 # ----------------------------------------------------------------------
 # GIT
@@ -435,20 +439,6 @@ alias hp="cd ~/Sites/heroku/public"
 
 alias navrestart='for i in "news" "success" "policy" "logos" "about" "public" "blog" "docs"; do heroku restart --app $i && sleep 1; done'
 
-# put heroku docbrown on PATH if you have it
-test -d "$HOME/sites/heroku/docbrown" &&
-PATH="$HOME/sites/heroku/docbrown:$PATH"
-
-# RVM
-[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm"  # This loads RVM into a shell session.
-
-function share-f(){
-  if [ "$1" = "" ] && [ "$2" = ""]; then
-    command echo 'appname email';
-  else
-    command cd ~/Sites/heroku/docbrown && ./bin/docbrown collaborator:add "$1" "$2" && cd -;
-  fi
-}
 
 function share(){
   if [ "$1" != "" ]; then
@@ -467,3 +457,6 @@ title_git
 # Use the color prompt by default when interactive
 test -n "$PS1" &&
 prompt_color
+export PATH="$HOME/.rbenv/bin:$PATH"
+eval "$(rbenv init -)"
+export GEM_HOME='/usr/local'
